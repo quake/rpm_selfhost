@@ -1,0 +1,18 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    cause (0.1)
+    cuba (3.4.0)
+      rack
+    influxdb (0.2.3)
+      cause
+      json
+    json (1.8.3)
+    rack (1.6.4)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  cuba
+  influxdb
