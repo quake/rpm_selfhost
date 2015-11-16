@@ -5,6 +5,7 @@ require 'influxdb'
 
 module RpmSelfhostHelper
   def json_body
+    req.body.rewind
     body = req.body.read
     body = Zlib::Inflate.inflate(body) if req.env["HTTP_CONTENT_ENCODING"] == "deflate"
     JSON.parse body
@@ -52,8 +53,8 @@ Cuba.define do
         data = json_body[3].map do |m, v|
           {
             series: 'metric_data',
-            tags: { name: m['name'], scope: m['scope'] },
-            values: { call_count: values[0], total_call_time: values[1], total_exclusive_time: values[2], min_call_time: values[3], max_call_time: values[4], sum_of_squares: values[5] },
+            tags: { name: m['name'], scope: m['scope'] }.reject{|key, value| value == ''},
+            values: { call_count: v[0], total_call_time: v[1], total_exclusive_time: v[2], min_call_time: v[3], max_call_time: v[4], sum_of_squares: v[5] },
             timestamp: timestamp
           }
         end
