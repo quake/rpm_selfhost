@@ -56,7 +56,7 @@
           "points": false,
           "renderer": "flot",
           "seriesOverrides": [],
-          "span": 12,
+          "span": 6,
           "stack": false,
           "steppedLine": false,
           "targets": [
@@ -74,9 +74,10 @@
                   "type": "time"
                 }
               ],
+              "groupByTags": [],
               "hide": false,
               "measurement": "analytic_event_data",
-              "query": "SELECT count(\"duration\") AS \"duration\" FROM \"analytic_event_data\" WHERE \"type\" = 'Transaction' and \"name\" !~ /^Controller\\/Middleware\\// AND $timeFilter GROUP BY time($interval)",
+              "query": "SELECT count(\"duration\") AS \"duration\" FROM \"analytic_event_data\" WHERE \"type\" = 'Transaction' and \"name\" !~ /^Controller\\/Middleware\\// and \"host\" =~ /$host/ and \"app_name\" = '$app_name' AND $timeFilter GROUP BY time($interval)",
               "rawQuery": true,
               "refId": "A",
               "tags": [
@@ -102,15 +103,7 @@
             "short",
             "short"
           ]
-        }
-      ],
-      "title": "Row"
-    },
-    {
-      "collapse": false,
-      "editable": true,
-      "height": "250px",
-      "panels": [
+        },
         {
           "aliasColors": {},
           "bars": false,
@@ -137,6 +130,7 @@
             "current": false,
             "max": false,
             "min": false,
+            "rightSide": false,
             "show": true,
             "total": false,
             "values": false
@@ -150,31 +144,12 @@
           "points": false,
           "renderer": "png",
           "seriesOverrides": [],
-          "span": 12,
-          "stack": false,
+          "span": 6,
+          "stack": true,
           "steppedLine": false,
           "targets": [
             {
-              "refId": "A",
-              "tags": [],
-              "groupBy": [
-                {
-                  "type": "time",
-                  "interval": "auto"
-                }
-              ],
-              "fields": [
-                {
-                  "name": "value",
-                  "func": "mean"
-                }
-              ],
-              "rawQuery": true,
-              "query": "SELECT 1000 * mean(\"duration\")  FROM \"analytic_event_data\" WHERE $timeFilter and type = 'Transaction' and \"name\" !~ /^Controller\\/Middleware\\// GROUP BY time($interval)",
-              "alias": "Time total"
-            },
-            {
-              "alias": "Time spent in database",
+              "alias": "Ruby",
               "fields": [
                 {
                   "func": "mean",
@@ -187,13 +162,34 @@
                   "type": "time"
                 }
               ],
-              "query": "SELECT 1000 * mean(\"database_duration\")  FROM \"analytic_event_data\" WHERE $timeFilter and type = 'Transaction' and \"name\" !~ /^Controller\\/Middleware\\// GROUP BY time($interval)",
+              "groupByTags": [],
+              "query": "SELECT 1000 * (mean(\"duration\") - mean(\"database_duration\") - mean(\"external_duration\"))  FROM \"analytic_event_data\" WHERE $timeFilter and type = 'Transaction' and \"name\" !~ /^Controller\\/Middleware\\// and \"host\" =~ /$host/ and \"app_name\" = '$app_name' GROUP BY time($interval)",
+              "rawQuery": true,
+              "refId": "A",
+              "tags": []
+            },
+            {
+              "alias": "Database",
+              "fields": [
+                {
+                  "func": "mean",
+                  "name": "value"
+                }
+              ],
+              "groupBy": [
+                {
+                  "interval": "auto",
+                  "type": "time"
+                }
+              ],
+              "groupByTags": [],
+              "query": "SELECT 1000 * mean(\"database_duration\")  FROM \"analytic_event_data\" WHERE $timeFilter and type = 'Transaction' and \"name\" !~ /^Controller\\/Middleware\\// and \"host\" =~ /$host/ and \"app_name\" = '$app_name' GROUP BY time($interval)",
               "rawQuery": true,
               "refId": "B",
               "tags": []
             },
             {
-              "alias": "Time spent in external",
+              "alias": "External",
               "fields": [
                 {
                   "func": "mean",
@@ -206,7 +202,8 @@
                   "type": "time"
                 }
               ],
-              "query": "SELECT 1000 * mean(\"external_duration\") FROM \"analytic_event_data\" WHERE $timeFilter and type = 'Transaction' and \"name\" !~ /^Controller\\/Middleware\\// GROUP BY time($interval)",
+              "groupByTags": [],
+              "query": "SELECT 1000 * mean(\"external_duration\") FROM \"analytic_event_data\" WHERE $timeFilter and type = 'Transaction' and \"name\" !~ /^Controller\\/Middleware\\// and \"host\" =~ /$host/ and \"app_name\" = '$app_name' GROUP BY time($interval)",
               "rawQuery": true,
               "refId": "C",
               "tags": []
@@ -228,46 +225,120 @@
           ]
         }
       ],
+      "showTitle": false,
       "title": "New row"
     }
   ],
+  "nav": [
+    {
+      "collapse": false,
+      "enable": true,
+      "notice": false,
+      "now": false,
+      "refresh_intervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "status": "Stable",
+      "time_options": [
+        "5m",
+        "15m",
+        "1h",
+        "6h",
+        "12h",
+        "24h",
+        "2d",
+        "7d",
+        "30d"
+      ],
+      "type": "timepicker"
+    }
+  ],
   "time": {
-    "from": "now-1h",
-    "to": "now"
-  },
-  "timepicker": {
-    "now": true,
-    "refresh_intervals": [
-      "5s",
-      "10s",
-      "30s",
-      "1m",
-      "5m",
-      "15m",
-      "30m",
-      "1h",
-      "2h",
-      "1d"
-    ],
-    "time_options": [
-      "5m",
-      "15m",
-      "1h",
-      "6h",
-      "12h",
-      "24h",
-      "2d",
-      "7d",
-      "30d"
-    ]
+    "from": "2015-11-28T01:36:39.147Z",
+    "to": "2015-11-28T10:05:29.943Z"
   },
   "templating": {
-    "list": []
+    "list": [
+      {
+        "allFormat": "glob",
+        "current": {
+          "text": "inspiration.chanyouji.com",
+          "value": "inspiration.chanyouji.com",
+          "tags": []
+        },
+        "datasource": "collector",
+        "includeAll": false,
+        "label": "Apps",
+        "multi": false,
+        "multiFormat": "glob",
+        "name": "app_name",
+        "options": [
+          {
+            "text": "inspiration.chanyouji.com",
+            "value": "inspiration.chanyouji.com",
+            "selected": true
+          },
+          {
+            "text": "qtest.chanyouji.com",
+            "value": "qtest.chanyouji.com",
+            "selected": false
+          }
+        ],
+        "query": "SHOW TAG VALUES FROM \"runner\" WITH KEY = \"app_name\"\t",
+        "refresh": true,
+        "refresh_on_load": false,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "allFormat": "regex wildcard",
+        "current": {
+          "text": "All",
+          "value": ".*"
+        },
+        "datasource": "collector",
+        "hideLabel": false,
+        "includeAll": true,
+        "label": "Servers",
+        "multi": false,
+        "multiFormat": "glob",
+        "name": "host",
+        "options": [
+          {
+            "text": "All",
+            "value": ".*",
+            "selected": true
+          },
+          {
+            "text": "10-10-188-125",
+            "value": "10\\-10\\-188\\-125",
+            "selected": false
+          }
+        ],
+        "query": "SHOW TAG VALUES FROM \"runner\" WITH KEY = \"host\" where app_name =~ /$app_name/",
+        "refresh": true,
+        "refresh_on_load": false,
+        "regex": "",
+        "tagValuesQuery": "",
+        "tagsQuery": "runner",
+        "type": "query",
+        "useTags": false
+      }
+    ]
   },
   "annotations": {
     "list": []
   },
-  "schemaVersion": 7,
-  "version": 14,
+  "schemaVersion": 6,
+  "version": 12,
   "links": []
 }

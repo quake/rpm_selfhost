@@ -22,6 +22,12 @@ module RpmSelfhostHelper
   def influxdb
     @influxdb ||= InfluxDB::Client.new 'collector', host: 'localhost'
   end
+
+  def get_runner(run_id)
+    influxdb.query("select * from runner where run_id = '#{run_id}'") do |name, tags, values|
+      return values[0]['app_name'], values[0]['host']
+    end
+  end
 end
 
 Cuba.plugin RpmSelfhostHelper
@@ -35,9 +41,15 @@ Cuba.define do
       end
 
       on 'connect' do
-        # TODO store host info and generate run id
-        # puts json_body
-        response agent_run_id: 123
+        run_id = (Time.now.to_f * 1000000 + rand(10000)).to_i
+        c = json_body[0]
+        data = [{
+          series: 'runner',
+          tags: {run_id: run_id, host: c['host'], app_name: c['app_name'][0]},
+          values: {pid: c['pid']}
+        }]
+        to_influx(data)
+        response agent_run_id: run_id
       end
 
       on 'get_agent_commands' do
@@ -49,8 +61,9 @@ Cuba.define do
       end
 
       on 'metric_data' do
-        timestamp = json_body[1].to_i
-        data = json_body[3].map do |m, v|
+        body = json_body
+        timestamp = body[1].to_i
+        data = body[3].map do |m, v|
           {
             series: 'metric_data',
             tags: { name: m['name'], scope: m['scope'] }.reject{|key, value| value == ''},
@@ -92,10 +105,11 @@ Cuba.define do
       end
 
       on 'analytic_event_data' do
+        app_name, host = get_runner(req.params['run_id'])
         data = json_body[1].map do |d, _|
           {
             series: 'analytic_event_data',
-            tags: { name: d['name'], type: d['type'] },
+            tags: { name: d['name'], type: d['type'], app_name: app_name, host: host },
             values: { duration: d['duration'], database_duration: d['databaseDuration'].to_f, external_duration: d['externalDuration'].to_f },
             timestamp: d['timestamp'].to_i
           }
